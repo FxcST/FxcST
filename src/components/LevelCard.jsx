@@ -7,7 +7,7 @@ export default function LevelCard({ player, xp, streak, sessions, verifiedRate }
   const rank = rankForLevel(level)
 
   return (
-    <section className="card overflow-hidden">
+    <section className="card overflow-hidden" aria-label="Player profile">
       <div className="relative p-5">
         {/* Soft pitch-light wash behind the identity block. */}
         <div

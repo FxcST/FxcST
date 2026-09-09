@@ -11,34 +11,7 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import { CATEGORY_STYLES } from '../data/seed.js'
-
-/** Proof shot more than a day ago is almost always recycled from an old session. */
-const MAX_PROOF_AGE_MS = 24 * 60 * 60 * 1000
-const MIN_PROOF_BYTES = 12 * 1024
-
-/**
- * Runs the local half of the anti-cheat check before anything is submitted:
- * right media type, recent enough, and not an empty placeholder file.
- */
-function inspectProof(file, required) {
-  const wantsVideo = required === 'video'
-  const isVideo = file.type.startsWith('video/')
-  const isImage = file.type.startsWith('image/')
-
-  if (wantsVideo && !isVideo) {
-    return { ok: false, message: 'This drill needs a video clip — a photo will not verify.' }
-  }
-  if (!wantsVideo && !isImage && !isVideo) {
-    return { ok: false, message: 'Upload a photo or video of your session.' }
-  }
-  if (file.size < MIN_PROOF_BYTES) {
-    return { ok: false, message: 'That file is too small to show a full rep. Record again.' }
-  }
-  if (file.lastModified && Date.now() - file.lastModified > MAX_PROOF_AGE_MS) {
-    return { ok: false, message: 'Proof must be captured within the last 24 hours.' }
-  }
-  return { ok: true, message: '' }
-}
+import { inspectProof } from '../lib/anticheat.js'
 
 export default function ProofModal({ exercise, completed, onClose, onVerified }) {
   const [stage, setStage] = useState('brief') // brief | review | verifying | verified

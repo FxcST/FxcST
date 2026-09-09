@@ -48,6 +48,7 @@ export default function App() {
     return QUESTS.map((quest) => {
       if (quest.id === 'q-recovery') return { ...quest, progress: didRecovery ? 1 : 0 }
       if (quest.id === 'q-weak-foot') return { ...quest, progress: didWeakFoot ? 1 : 0 }
+      if (quest.id === 'q-streak') return { ...quest, progress: completed.size > 0 ? 1 : 0 }
       if (quest.id === 'q-touches') {
         return { ...quest, progress: quest.progress + completed.size * 30 }
       }
@@ -120,7 +121,7 @@ export default function App() {
         {showHome && <QuestBoard quests={quests} />}
 
         {showTrain && (
-          <section className="space-y-3">
+          <section className="space-y-3" aria-label="Training drills">
             <header className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-emerald-400" aria-hidden="true" />

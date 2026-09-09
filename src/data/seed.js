@@ -161,7 +161,7 @@ export const QUESTS = [
   { id: 'q-touches', label: 'Log 200 touches on the ball', xp: 40, target: 200, progress: 140, unit: 'touches' },
   { id: 'q-weak-foot', label: 'Complete a weak foot drill', xp: 60, target: 1, progress: 0, unit: 'drill' },
   { id: 'q-recovery', label: 'Finish a recovery session', xp: 30, target: 1, progress: 0, unit: 'session' },
-  { id: 'q-streak', label: 'Train 2 days in a row', xp: 50, target: 2, progress: 1, unit: 'days' },
+  { id: 'q-streak', label: 'Keep your streak alive today', xp: 50, target: 1, progress: 0, unit: 'drill' },
 ]
 
 /** The signed-in player. */

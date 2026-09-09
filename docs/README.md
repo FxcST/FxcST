@@ -22,6 +22,8 @@ npm run dev      # dev server
 npm run build    # production build
 npm run preview  # serve the build
 npm run lint     # oxlint
+npm test         # vitest, single run
+npm run test:watch
 ```
 
 ## Features
@@ -41,7 +43,8 @@ verified, so completing a recovery drill ticks the recovery quest.
 ### Anti-cheat proof gate
 `src/components/ProofModal.jsx` — **no XP is awarded without proof.** Opening a
 drill shows the brief and its steps, but the only way forward is uploading a
-photo or video. `inspectProof()` runs the local checks before submission:
+photo or video. `inspectProof()` in `src/lib/anticheat.js` runs the local checks
+before submission:
 
 | Check | Rule |
 | --- | --- |
@@ -66,12 +69,34 @@ Six drills across three disciplines, in `src/data/seed.js`:
 - **Fitness** — 15-min Core Routine, Sprint Intervals
 - **Recovery** — Foam Rolling & Mobility
 
+## Tests
+
+62 tests across three suites, run with `npm test`:
+
+- `src/lib/game.test.js` — the XP curve and level resolution (thresholds,
+  remainder carry-over, monotonicity, the seeded player's exact position),
+  rank bands, ordinals, and localStorage persistence including corrupt and
+  blocked storage.
+- `src/lib/anticheat.test.js` — every accept and reject path of `inspectProof`,
+  both boundaries (a file exactly on the size threshold, proof exactly 24 hours
+  old), check ordering, and the ok/message invariant.
+- `src/App.test.jsx` — the app end to end in jsdom: that no claim button exists
+  before a proof clears, that each rejection awards nothing, that XP, streak,
+  session count, quest state and leaderboard position all move together on a
+  verified drill, that progress survives a reload, and that the town filter
+  re-ranks the board.
+
+The app tests use `applyAccept: false` deliberately: a desktop file picker lets
+a user choose "All files", so the `accept` attribute is only a hint and the
+JavaScript check is the real gate — the tests exercise it the way a cheat would.
+
 ## Layout
 
 ```
 src/
   App.jsx              tab shell, drill filtering, XP awarding
   lib/game.js          level curve, ranks, ordinals, localStorage persistence
+  lib/anticheat.js     proof inspection rules
   data/seed.js         drills, quests, towns, player and rival records
   components/
     LevelCard.jsx      level, XP bar, streak, stats

@@ -4,7 +4,7 @@ export default function QuestBoard({ quests }) {
   const done = quests.filter((q) => q.progress >= q.target).length
 
   return (
-    <section className="card p-4">
+    <section className="card p-4" aria-label="Daily quests">
       <header className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Swords className="h-4 w-4 text-amber-400" aria-hidden="true" />

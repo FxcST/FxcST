@@ -86,7 +86,7 @@ export default function Leaderboard({ player, xp, streak, town, onTownChange }) 
   }, [player, xp, streak, town])
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" aria-label="Leaderboard">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-emerald-400" aria-hidden="true" />
