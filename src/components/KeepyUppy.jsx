@@ -21,11 +21,12 @@ function saveBest(best) {
   }
 }
 
-export default function KeepyUppy() {
+export default function KeepyUppy({ onRunEnd, xpNote }) {
   const canvasRef = useRef(null)
   const gameRef = useRef(null)
   const frameRef = useRef(0)
   const lastTimeRef = useRef(0)
+  const onRunEndRef = useRef(onRunEnd)
 
   // Mirrors of engine state, updated only when they change, so the render loop
   // itself never triggers a React re-render.
@@ -80,6 +81,7 @@ export default function KeepyUppy() {
         setStatus('dead')
         setBest(game.best)
         saveBest(game.best)
+        onRunEndRef.current?.(game.score)
       }
     }
 
@@ -89,6 +91,12 @@ export default function KeepyUppy() {
       lastTimeRef.current = 0
     }
   }, [getGame])
+
+  // Kept in a ref so the animation loop never re-subscribes when the parent
+  // re-renders with a new callback identity.
+  useEffect(() => {
+    onRunEndRef.current = onRunEnd
+  }, [onRunEnd])
 
   // Space and Enter play too, so the game is not mouse-only.
   useEffect(() => {
@@ -188,8 +196,7 @@ export default function KeepyUppy() {
 
       <p className="flex items-start gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-[11px] text-slate-400">
         <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" aria-hidden="true" />
-        Arcade scores are just for fun — they sit outside your training XP, so the
-        town leaderboard stays earned on the pitch.
+        {xpNote}
       </p>
     </section>
   )

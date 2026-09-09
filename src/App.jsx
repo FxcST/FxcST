@@ -10,6 +10,7 @@ import KeepyUppy from './components/KeepyUppy.jsx'
 import XpToast from './components/XpToast.jsx'
 import { CATEGORIES, EXERCISES, PLAYER, QUESTS } from './data/seed.js'
 import { levelFromXp, loadProgress, saveProgress } from './lib/game.js'
+import { awardForRun, DAILY_CAP, today } from './lib/arcade.js'
 
 const INITIAL_PROGRESS = {
   xp: PLAYER.xp,
@@ -17,6 +18,9 @@ const INITIAL_PROGRESS = {
   sessions: PLAYER.sessions,
   completed: [],
   town: PLAYER.town,
+  /** Arcade XP is capped per day; these two track that day's allowance. */
+  arcadeXpDate: null,
+  arcadeXpEarned: 0,
 }
 
 export default function App() {
@@ -85,6 +89,33 @@ export default function App() {
     },
     [progress],
   )
+
+  /**
+   * A finished arcade run. The cap in lib/arcade.js is what stops the
+   * mini-game distorting a leaderboard that is meant to be earned by training.
+   */
+  const finishRun = useCallback(
+    (score) => {
+      const result = awardForRun(score, progress)
+
+      setProgress({
+        ...progress,
+        xp: progress.xp + result.xp,
+        arcadeXpDate: result.arcadeXpDate,
+        arcadeXpEarned: result.arcadeXpEarned,
+      })
+
+      if (result.xp > 0) {
+        setToast(`+${result.xp} XP · ${score} defenders beaten`)
+      } else if (result.cappedOut) {
+        setToast(`Daily arcade cap reached — train to keep earning XP`)
+      }
+    },
+    [progress],
+  )
+
+  const arcadeRemaining =
+    progress.arcadeXpDate === today() ? Math.max(0, DAILY_CAP - progress.arcadeXpEarned) : DAILY_CAP
 
   const setTown = useCallback((town) => {
     setProgress((current) => ({ ...current, town }))
@@ -164,7 +195,16 @@ export default function App() {
           </section>
         )}
 
-        {showPlay && <KeepyUppy />}
+        {showPlay && (
+          <KeepyUppy
+            onRunEnd={finishRun}
+            xpNote={
+              arcadeRemaining > 0
+                ? `Each defender beaten is 1 XP, up to ${DAILY_CAP} a day — ${arcadeRemaining} left today. Training is still where the real XP is.`
+                : `You have taken today's ${DAILY_CAP} arcade XP. Play on for the high score, or train to keep earning.`
+            }
+          />
+        )}
 
         {showRanks && (
           <Leaderboard

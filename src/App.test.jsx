@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App.jsx'
 import { MIN_PROOF_BYTES } from './lib/anticheat.js'
@@ -223,5 +223,95 @@ describe('leaderboard', () => {
 
     render(<App />)
     expect(screen.getByText('Ellis G.')).toBeInTheDocument()
+  })
+})
+
+describe('arcade XP', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+  })
+
+  afterEach(() => vi.useRealTimers())
+
+  /** Play the mini-game to a finished run by never tapping after the start. */
+  function playUntilOut() {
+    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })))
+    for (let i = 0; i < 200; i += 1) {
+      const due = frameCallbacks
+      frameCallbacks = []
+      act(() => {
+        for (const cb of due) cb((i + 1) * 32)
+      })
+    }
+  }
+
+  let frameCallbacks = []
+
+  function stubCanvas() {
+    frameCallbacks = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      frameCallbacks.push(cb)
+      return frameCallbacks.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      () =>
+        new Proxy(
+          {},
+          {
+            get: (target, prop) =>
+              prop in target
+                ? target[prop]
+                : () => (prop === 'createRadialGradient' ? { addColorStop: () => {} } : undefined),
+            set: (target, prop, value) => {
+              target[prop] = value
+              return true
+            },
+          },
+        ),
+    )
+  }
+
+  it('states the daily cap and what is left of it', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    stubCanvas()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Play' }))
+    expect(screen.getByText(/up to 20 a day — 20 left today/)).toBeInTheDocument()
+  })
+
+  it('keeps a whole day of arcade XP below one verified drill', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    stubCanvas()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Play' }))
+    // Bank the full daily allowance directly, then confirm the ceiling holds.
+    for (let run = 0; run < 30; run += 1) playUntilOut()
+
+    await user.click(screen.getByRole('button', { name: 'Home' }))
+    const profile = screen.getByRole('region', { name: 'Player profile' })
+    const xpText = within(profile).getByText(/^4,9|^4,8/).textContent
+    const xp = Number(xpText.replace(/,/g, ''))
+
+    // Seed XP is 4,820. The cheapest drill is 80 XP; a day of arcade is 20.
+    expect(xp).toBeGreaterThanOrEqual(4820)
+    expect(xp).toBeLessThanOrEqual(4840)
+  })
+
+  it('does not touch the streak or the verified-drill count', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    stubCanvas()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Play' }))
+    playUntilOut()
+
+    await user.click(screen.getByRole('button', { name: 'Home' }))
+    const profile = screen.getByRole('region', { name: 'Player profile' })
+    expect(within(profile).getByText('6')).toBeInTheDocument() // streak unchanged
+    expect(screen.getByText('0/6 verified')).toBeInTheDocument()
   })
 })

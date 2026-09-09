@@ -160,13 +160,36 @@ describe('KeepyUppy', () => {
     expect(window.localStorage.getItem('fxcst.arcade.best.v1')).toBe('12')
   })
 
-  it('keeps arcade scores out of the training XP system', () => {
-    render(<KeepyUppy />)
-    expect(screen.getByText(/sit outside your training XP/)).toBeInTheDocument()
-    // The training progress key must be untouched by playing.
+  it('reports the finished run to its parent exactly once', () => {
+    const onRunEnd = vi.fn()
+    render(<KeepyUppy onRunEnd={onRunEnd} />)
+
     act(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })))
     advanceFrames(200, 32)
+
+    expect(onRunEnd).toHaveBeenCalledTimes(1)
+    expect(onRunEnd).toHaveBeenCalledWith(expect.any(Number))
+  })
+
+  it('never awards XP itself — that stays the parent\'s decision', () => {
+    render(<KeepyUppy onRunEnd={() => {}} />)
+
+    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })))
+    advanceFrames(200, 32)
+
     expect(window.localStorage.getItem('fxcst.progress.v1')).toBeNull()
+  })
+
+  it('runs without a parent callback at all', () => {
+    render(<KeepyUppy />)
+    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })))
+    expect(() => advanceFrames(200, 32)).not.toThrow()
+    expect(screen.getByText('Out of play')).toBeInTheDocument()
+  })
+
+  it('shows the XP note it is given', () => {
+    render(<KeepyUppy xpNote="12 left today" />)
+    expect(screen.getByText('12 left today')).toBeInTheDocument()
   })
 
   it('cancels its animation frame on unmount', () => {

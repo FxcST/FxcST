@@ -85,10 +85,16 @@ Two tuning decisions worth knowing:
   reachable path between them, which reads as the game cheating rather than as
   difficulty.
 
-Arcade scores deliberately do **not** feed training XP or the town leaderboard.
-Tapping a screen is not proof of training, and letting it earn XP would undo
-the anti-cheat gate the rest of the app is built around. The mini-game keeps
-its own best score under `fxcst.arcade.best.v1`.
+**Arcade XP is capped per day.** Each defender beaten is worth 1 XP, up to 20 a
+day (`src/lib/arcade.js`). The cap is the whole point: tapping a screen is not
+proof of training, so a player who only ever plays the game gains less in a
+whole day than one verified recovery drill is worth (80 XP). That keeps the
+mini-game rewarding without letting it distort a leaderboard meant to be earned
+on the pitch. The allowance resets at the player's local midnight, and the
+game's own best score lives under `fxcst.arcade.best.v1`.
+
+Arcade runs never touch the streak, the session count or the verified-drill
+tally — those stay proof-only.
 
 ### Drills
 Six drills across three disciplines, in `src/data/seed.js`:
@@ -99,7 +105,7 @@ Six drills across three disciplines, in `src/data/seed.js`:
 
 ## Tests
 
-114 tests across five suites, run with `npm test`:
+133 tests across six suites, run with `npm test`:
 
 - `src/lib/game.test.js` — the XP curve and level resolution (thresholds,
   remainder carry-over, monotonicity, the seeded player's exact position),
@@ -114,6 +120,9 @@ Six drills across three disciplines, in `src/data/seed.js`:
   tunnel the ball through a defender), circle-rectangle collision at the
   corners, scoring exactly once per wall, and a bot playthrough asserting every
   seed stays both fair and hard.
+- `src/lib/arcade.test.js` — the daily XP cap: clipping a big run to what is
+  left, paying nothing once spent, resetting on a new day, and an invariant
+  that no number of runs can ever beat the cap.
 - `src/components/KeepyUppy.test.jsx` — the game's React wiring against a
   stubbed canvas and hand-driven animation frames: input by pointer and by key,
   the ready/dead lifecycle, best-score persistence, and that playing never
@@ -135,6 +144,7 @@ src/
   App.jsx              tab shell, drill filtering, XP awarding
   lib/game.js          level curve, ranks, ordinals, localStorage persistence
   lib/anticheat.js     proof inspection rules
+  lib/arcade.js        daily-capped arcade XP
   game/engine.js       mini-game rules and physics (no DOM)
   game/render.js       canvas drawing for the mini-game
   data/seed.js         drills, quests, towns, player and rival records
