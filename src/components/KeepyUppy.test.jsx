@@ -16,7 +16,7 @@ function stubContext() {
   const handler = {
     get(target, prop) {
       if (prop in target) return target[prop]
-      return (...args) => {
+      return () => {
         contextCalls.push(prop)
         if (prop === 'createRadialGradient') {
           return { addColorStop: () => {} }
