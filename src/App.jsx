@@ -6,6 +6,7 @@ import ExerciseCard from './components/ExerciseCard.jsx'
 import ProofModal from './components/ProofModal.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import TabBar from './components/TabBar.jsx'
+import KeepyUppy from './components/KeepyUppy.jsx'
 import XpToast from './components/XpToast.jsx'
 import { CATEGORIES, EXERCISES, PLAYER, QUESTS } from './data/seed.js'
 import { levelFromXp, loadProgress, saveProgress } from './lib/game.js'
@@ -94,6 +95,7 @@ export default function App() {
   const showHome = tab === 'home'
   const showTrain = tab === 'home' || tab === 'train'
   const showRanks = tab === 'home' || tab === 'ranks'
+  const showPlay = tab === 'play'
 
   return (
     <div className="min-h-screen pb-24">
@@ -161,6 +163,8 @@ export default function App() {
             </div>
           </section>
         )}
+
+        {showPlay && <KeepyUppy />}
 
         {showRanks && (
           <Leaderboard

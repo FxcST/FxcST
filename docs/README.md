@@ -62,6 +62,34 @@ Sheffield, Nottingham, Glasgow, Cardiff) plus an All-UK board. The player is
 ranked in-place among rivals from the selected town, with their own position
 called out above the table.
 
+### Keepy Uppy mini-game
+`src/components/KeepyUppy.jsx` — a one-tap arcade loop in the Flappy Bird
+family, on the **Play** tab. Tap (or press space) to kick the ball upward and
+thread the gap between defenders; one touch ends the run. It gets faster and
+tighter the longer you last, and your best score persists.
+
+The rules live in `src/game/engine.js` as a plain state object stepped by a
+delta time, with no canvas, DOM or timers — so the physics, scoring and
+difficulty curve are all unit-testable without a browser.
+`src/game/render.js` draws a frame; `KeepyUppy.jsx` owns input and the
+animation loop.
+
+Two tuning decisions worth knowing:
+
+- **Difficulty was tuned against a bot, not by feel.** A frame-perfect
+  autopilot capped at 19 points under the first numbers, which meant the ramp
+  beat skill rather than rewarding it. It now reaches roughly 40, so a strong
+  human run is 10–25 and the board stays contestable.
+- **`maxGapShift` caps how far a gap can move from the previous one.** Without
+  it the RNG can place consecutive gaps at opposite ends of the pitch with no
+  reachable path between them, which reads as the game cheating rather than as
+  difficulty.
+
+Arcade scores deliberately do **not** feed training XP or the town leaderboard.
+Tapping a screen is not proof of training, and letting it earn XP would undo
+the anti-cheat gate the rest of the app is built around. The mini-game keeps
+its own best score under `fxcst.arcade.best.v1`.
+
 ### Drills
 Six drills across three disciplines, in `src/data/seed.js`:
 
@@ -71,7 +99,7 @@ Six drills across three disciplines, in `src/data/seed.js`:
 
 ## Tests
 
-62 tests across three suites, run with `npm test`:
+114 tests across five suites, run with `npm test`:
 
 - `src/lib/game.test.js` — the XP curve and level resolution (thresholds,
   remainder carry-over, monotonicity, the seeded player's exact position),
@@ -80,6 +108,16 @@ Six drills across three disciplines, in `src/data/seed.js`:
 - `src/lib/anticheat.test.js` — every accept and reject path of `inspectProof`,
   both boundaries (a file exactly on the size threshold, proof exactly 24 hours
   old), check ordering, and the ok/message invariant.
+- `src/game/engine.test.js` — the mini-game's physics and rules: the RNG's
+  determinism, the difficulty curve's monotonicity and clamps, ceiling and
+  ground behaviour, oversized-frame clamping (so a backgrounded tab cannot
+  tunnel the ball through a defender), circle-rectangle collision at the
+  corners, scoring exactly once per wall, and a bot playthrough asserting every
+  seed stays both fair and hard.
+- `src/components/KeepyUppy.test.jsx` — the game's React wiring against a
+  stubbed canvas and hand-driven animation frames: input by pointer and by key,
+  the ready/dead lifecycle, best-score persistence, and that playing never
+  touches the training progress key.
 - `src/App.test.jsx` — the app end to end in jsdom: that no claim button exists
   before a proof clears, that each rejection awards nothing, that XP, streak,
   session count, quest state and leaderboard position all move together on a
@@ -97,6 +135,8 @@ src/
   App.jsx              tab shell, drill filtering, XP awarding
   lib/game.js          level curve, ranks, ordinals, localStorage persistence
   lib/anticheat.js     proof inspection rules
+  game/engine.js       mini-game rules and physics (no DOM)
+  game/render.js       canvas drawing for the mini-game
   data/seed.js         drills, quests, towns, player and rival records
   components/
     LevelCard.jsx      level, XP bar, streak, stats
@@ -104,7 +144,8 @@ src/
     ExerciseCard.jsx   drill list item
     ProofModal.jsx     drill brief + anti-cheat upload flow
     Leaderboard.jsx    town filter + rankings
-    TabBar.jsx         Home / Train / Ranks
+    KeepyUppy.jsx      the mini-game: canvas, input, animation loop
+    TabBar.jsx         Home / Train / Play / Ranks
     XpToast.jsx        XP and level-up notifications
 ```
 

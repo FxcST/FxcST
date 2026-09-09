@@ -1,8 +1,9 @@
-import { Home, Dumbbell, Trophy } from 'lucide-react'
+import { Home, Dumbbell, Trophy, Gamepad2 } from 'lucide-react'
 
 const TABS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'train', label: 'Train', icon: Dumbbell },
+  { id: 'play', label: 'Play', icon: Gamepad2 },
   { id: 'ranks', label: 'Ranks', icon: Trophy },
 ]
 
